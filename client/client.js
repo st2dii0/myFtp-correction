@@ -14,6 +14,7 @@ class FtpClient {
             host: this.host
         }, () => {
             log('client connected', "cyan");
+            this.isReady = true
             this.prompt();
 
         })
@@ -33,13 +34,11 @@ class FtpClient {
             input: process.stdin
         });
         rl.on('line', (input) => {
+
             this.socket.write(input)
             rl.close();
         });
-
     }
-
-
 }
 
 const args = argv();

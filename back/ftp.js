@@ -1,41 +1,33 @@
-import net from 'net'
 import dbUser from '../config/db.json'
 import path from 'path'
 import fs from 'fs'
 import { isAllowedCommand, isAllowLoggedCommands } from '../common/utils'
+import { Server } from './server'
+import { exec } from 'child_process'
 
-
-class Server {
-
-    create(port, callback){
-        let instance = net.createServer(callback);
-
-        instance.on('error', (e) => {
-            console.error(e);
-        })
-
-        instance.on('close', () => {
-            console.log('server closed')
-        })
-
-        instance.listen(port, () => {
-            console.log(`This server is listening on ${port} port`);
-        });
-    }
-}
 
 class FtpServer extends Server {
 
     constructor(){
         super();
         this.port = 2121;
-        this.ROOT_FTP_DIRECTORY = '/tmp';
+        this.ROOT_FTP_DIRECTORY = path.join(process.cwd(), 'share');
     }
 
     start(){
         super.create(this.port, (socket) => {
             console.log("socket connected");
             socket.setEncoding('ascii');
+
+            //TODO del this debug object
+            socket.session = {
+                username: "louis",
+                isConnected: true
+            }
+            this.checkDir(socket, "louis")
+            //end to del
+
+
             socket.on('close', () => {
                 console.log("socket disconnected.")
             })
@@ -114,6 +106,12 @@ class FtpServer extends Server {
 
     pwd(socket){
         socket.write(socket.session.pwd);
+    }
+
+    list(socket){
+        exec(`ls -l ${socket.session.directory}`, (e, stdout, stderr) => {
+            socket.write(stdout)
+        })
     }
 
     checkDir(socket, username) {

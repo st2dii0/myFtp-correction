@@ -22,7 +22,11 @@ const unloggedCommands = [
 ]
 
 const loggedCommands = [
-    'PWD'
+    'PWD',
+    'LIST',
+    'CWD',
+    'RETR',
+    'STOR'
 ]
 
 export function isAllowedCommand(cmd){
