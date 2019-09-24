@@ -13,3 +13,22 @@ export function log(string, color='magenta', withNewLine=true){
         process.stdout.write(toReturn);
     }
 }
+
+const unloggedCommands = [
+    'USER',
+    'PASS',
+    'HELP',
+    'QUIT'
+]
+
+const loggedCommands = [
+    'PWD'
+]
+
+export function isAllowedCommand(cmd){
+    return unloggedCommands.includes(cmd.toUpperCase());
+}
+
+export function isAllowLoggedCommands(cmd){
+    return loggedCommands.includes(cmd.toUpperCase()) || unloggedCommands.includes(cmd.toUpperCase());
+}

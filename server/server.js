@@ -2,6 +2,7 @@ import net from 'net'
 import dbUser from '../config/db.json'
 import path from 'path'
 import fs from 'fs'
+import { isAllowedCommand, isAllowLoggedCommands } from '../common/utils'
 
 
 class Server {
@@ -45,19 +46,18 @@ class FtpServer extends Server {
                 data = data.trim();
                 let [cmd, ...args] = data.split(' ');
                 cmd = cmd.toLowerCase();
+
+                if((!socket.session || !socket.session.isConnected) && !isAllowedCommand(cmd)){
+                    socket.write(`This command is not implemented or you need to be logged to use ${cmd}`);
+                    return
+                }
+                if (!isAllowLoggedCommands(cmd)){
+                    socket.write(`This command is not implemented: <${cmd}>`);
+                    return
+                }
+
                 this[cmd](socket, ...args)
-                //
-                // if (cmd === 'HELP'){
-                //     this.help(socket);
-                // } else if (cmd === 'QUIT') {
-                //     this.quit(socket);
-                // } else if (cmd === 'USER') {
-                //     this.user(socket, args[0]);
-                // } else if (cmd === 'PASS') {
-                //     this.pass(socket, args[0])
-                // } else if (cmd === 'PWD') {
-                //     this.pwd(socket);
-                // }
+
             })
         });
     }
