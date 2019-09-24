@@ -1,5 +1,8 @@
 import net from 'net'
 import dbUser from '../config/db.json'
+import path from 'path'
+import fs from 'fs'
+
 
 class Server {
 
@@ -25,6 +28,7 @@ class FtpServer extends Server {
     constructor(){
         super();
         this.port = 2121;
+        this.ROOT_FTP_DIRECTORY = '/tmp';
     }
 
     start(){
@@ -36,18 +40,24 @@ class FtpServer extends Server {
             })
 
             socket.on('data', (data) => {
+                //TODO create command directory and use index.js
+
                 data = data.trim();
                 let [cmd, ...args] = data.split(' ');
-                cmd = cmd.toUpperCase();
-                if (cmd === 'HELP'){
-                    this.help(socket);
-                } else if (cmd === 'QUIT') {
-                    this.quit(socket);
-                } else if (cmd === 'USER') {
-                    this.user(socket, args[0]);
-                } else if (cmd === 'PASS') {
-                    this.pass(socket, args[0])
-                }
+                cmd = cmd.toLowerCase();
+                this[cmd](socket, ...args)
+                //
+                // if (cmd === 'HELP'){
+                //     this.help(socket);
+                // } else if (cmd === 'QUIT') {
+                //     this.quit(socket);
+                // } else if (cmd === 'USER') {
+                //     this.user(socket, args[0]);
+                // } else if (cmd === 'PASS') {
+                //     this.pass(socket, args[0])
+                // } else if (cmd === 'PWD') {
+                //     this.pwd(socket);
+                // }
             })
         });
     }
@@ -95,10 +105,25 @@ class FtpServer extends Server {
 
         if (user.password === password){
             socket.session.isConnected = true;
+            this.checkDir(socket, user.username);
             socket.write("Password accepted, you're logged")
         } else {
             socket.write("Password rejected, administrators will be notified");
         }
+    }
+
+    pwd(socket){
+        socket.write(socket.session.pwd);
+    }
+
+    checkDir(socket, username) {
+        const tmpPath = path.join(this.ROOT_FTP_DIRECTORY, username);
+        if (!fs.existsSync(tmpPath)) {
+            fs.mkdirSync(tmpPath);
+
+        }
+        socket.session.directory = tmpPath;
+        socket.session.pwd = `/${username}`;
     }
 }
 
