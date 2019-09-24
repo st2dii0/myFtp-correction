@@ -1,5 +1,5 @@
 import net from 'net'
-
+import dbUser from '../config/db.json'
 
 class Server {
 
@@ -37,11 +37,23 @@ class FtpServer extends Server {
 
             socket.on('data', (data) => {
                 data = data.trim();
-                if (data === 'HELP'){
+                let [cmd, ...args] = data.split(' ');
+                cmd = cmd.toUpperCase();
+                if (cmd === 'HELP'){
                     this.help(socket);
+                } else if (cmd === 'QUIT') {
+                    this.quit(socket);
+                } else if (cmd === 'USER') {
+                    this.user(socket, args[0]);
+                } else if (cmd === 'PASS') {
+                    this.pass(socket, args[0])
                 }
             })
         });
+    }
+
+    quit(socket) {
+        socket.end();
     }
 
     help(socket){
@@ -58,6 +70,35 @@ class FtpServer extends Server {
           -  QUIT
           `;
         socket.write(str);
+    }
+
+    user(socket, username) {
+        const user = dbUser.find(user => user.username === username);
+        if (!user){
+            socket.write("Need an account to login")
+        } else {
+            socket.session = {
+                username,
+                isConnected: false
+            }
+            socket.write(`Username <${username}> ok -- need password`);
+
+        }
+    }
+
+    pass(socket, password) {
+        if (!socket.session){
+            socket.write("enter user first");
+            return
+        }
+        const user = dbUser.find(user => socket.session.username === user.username);
+
+        if (user.password === password){
+            socket.session.isConnected = true;
+            socket.write("Password accepted, you're logged")
+        } else {
+            socket.write("Password rejected, administrators will be notified");
+        }
     }
 }
 
